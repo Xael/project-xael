@@ -1,7 +1,17 @@
-{
-  "name": "PROJECT XAEL - LEAX",
-  "description": "An immersive, portal-style digital archive for games, music, comics, and software development, now with LEAX Social Network integration and Full-Stack Express backend.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Xael // Digital Archive</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/index.css">
+
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

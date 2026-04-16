@@ -1,26 +1,83 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600&family=Outfit:wght@300;400;500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    @apply bg-void text-slate-300 font-sans antialiased transition-colors duration-1000;
-  }
-}
-
-@theme {
-  --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-display: "Orbitron", sans-serif;
-}
-
-@layer components {
-  .glass {
-    @apply bg-surface backdrop-blur-xl border border-white/10 shadow-2xl;
-  }
-  
-  .glass-dark {
-    @apply bg-black/40 backdrop-blur-2xl border border-white/5 shadow-2xl;
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user identity, settings, and progression data.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID (UID)" },
+        "displayName": { "type": "string", "description": "Public display name" },
+        "firstName": { "type": "string", "description": "First name for greetings" },
+        "email": { "type": "string", "format": "email", "description": "User email (PII)" },
+        "avatarUrl": { "type": "string", "format": "uri", "description": "Profile picture URL" },
+        "strikes": { "type": "integer", "description": "Number of safety violations" },
+        "isBanned": { "type": "boolean", "description": "Whether the user is restricted" },
+        "hasAcceptedTerms": { "type": "boolean", "description": "Legal compliance flag" },
+        "xp": { "type": "integer", "description": "Experience points" },
+        "level": { "type": "integer", "description": "User level" },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "sectors": { "type": "array" },
+            "themeColor": { "type": "string" },
+            "designStyle": { "type": "string" },
+            "backgroundUrl": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "email", "hasAcceptedTerms", "displayName"]
+    },
+    "Project": {
+      "title": "Project Artifact",
+      "description": "A creative asset stored in a specific sector.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "sectorId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "year": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "imageUrl": { "type": "string" },
+        "link": { "type": "string" },
+        "tracks": { "type": "array" },
+        "pages": { "type": "array" },
+        "videoUrl": { "type": "string" },
+        "fullDescription": { "type": "string" }
+      },
+      "required": ["id", "ownerId", "sectorId", "title"]
+    },
+    "FeedItem": {
+      "title": "Global Feed Item",
+      "description": "A transmuted entry in the global history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "original_text": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "audio"] },
+        "data": { "type": "object" },
+        "votes": { "type": "integer" }
+      },
+      "required": ["id", "userId", "timestamp", "original_text", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and settings."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": "Project",
+      "description": "User's creative artifacts."
+    },
+    "/feed/{itemId}": {
+      "schema": "FeedItem",
+      "description": "Global history of transmuted stories."
+    }
   }
 }
