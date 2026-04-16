@@ -8,6 +8,8 @@ import { PrismaClient } from "@prisma/client";
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+import "dotenv/config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,13 +24,27 @@ async function startServer() {
   const io = new Server(server);
   const PORT = 3000;
 
+  app.use(cors({
+    origin: process.env.APP_URL || true,
+    credentials: true,
+  }));
   app.use(express.json());
   app.use(cookieParser());
+
+  // Request logger
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+  });
 
   // Socket.io connection
   io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
     socket.on("disconnect", () => console.log("Client disconnected"));
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString() });
   });
 
   // --- AUTH ROUTES ---
@@ -39,6 +55,7 @@ async function startServer() {
         throw new Error("GOOGLE_CLIENT_ID is not defined in environment variables.");
       }
       const redirectUri = `${process.env.APP_URL || 'http://localhost:3000'}/auth/callback`;
+      console.log("Generating Google Auth URL with redirect:", redirectUri);
       const url = googleClient.generateAuthUrl({
         access_type: "offline",
         scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
@@ -225,6 +242,12 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
+    
+    // Safety check: Don't serve index.html for missing /api routes
+    app.all("/api/*", (req, res) => {
+      res.status(404).json({ error: `Route ${req.method} ${req.url} not found on server.` });
+    });
+
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
