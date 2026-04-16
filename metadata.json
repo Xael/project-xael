@@ -1,0 +1,7 @@
+{
+  "name": "PROJECT XAEL - LEAX",
+  "description": "An immersive, portal-style digital archive for games, music, comics, and software development, now with LEAX Social Network integration and Full-Stack Express backend.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
