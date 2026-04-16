@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Terminal, Lock, ShieldX, Box, Sprout, LogOut, Globe, User, PlusCircle, ExternalLink, Edit3, Settings
 } from 'lucide-react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from './services/firebase';
 import { DesignStyle, ProjectItem, UserProfile, AppSettings, HistoryItem } from './types';
 import { BootScreen } from './components/BootScreen';
 import { CircuitBackground } from './components/CircuitBackground';
@@ -25,7 +23,8 @@ import {
   saveUserSettings, 
   subscribeToGlobalFeed,
   subscribeToUserProjects,
-  voteOnHistoryItem
+  voteOnHistoryItem,
+  logout
 } from './services/databaseService';
 
 const GUELAS_UNLOCK_XP = 100;
@@ -131,24 +130,20 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => setBootSequence(false), 2000);
     
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const profile = await getOrCreateUserProfile(user);
+    // Check local session on mount
+    getOrCreateUserProfile().then(profile => {
+      if (profile) {
         setCurrentUser(profile);
         setViewedUser(profile);
         setHubView('archive');
       } else {
         setCurrentUser(null);
         setViewedUser(SYSTEM_USER);
-        setHubView('archive');
-        setUserProjects({});
-        setGlobalFeed([]);
       }
     });
 
     return () => {
       clearTimeout(timer);
-      unsubscribeAuth();
     };
   }, []);
 
@@ -169,9 +164,9 @@ export default function App() {
     };
   }, [currentUser?.id]);
 
-  const handleLogout = () => {
-    signOut(auth);
-    window.location.reload(); // Force full reload to reset local states
+  const handleLogout = async () => {
+    await logout();
+    window.location.reload(); 
   };
 
   const handleUpdateSettings = (settings: AppSettings) => {

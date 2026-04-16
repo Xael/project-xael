@@ -1,8 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, AlertCircle, Globe } from 'lucide-react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../services/firebase';
 
 interface LoginProps {
   onLogin: (userData: any) => void;
@@ -15,12 +13,32 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     if (!acceptedTerms) return;
     
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      onLogin(result.user);
+      const res = await fetch('/api/auth/google/url');
+      const { url } = await res.json();
+      
+      const authWindow = window.open(
+        url,
+        'google_login_popup',
+        'width=600,height=700'
+      );
+
+      if (!authWindow) {
+        alert('Por favor, permita popups para fazer login.');
+      }
     } catch (error) {
       console.error("Login failed:", error);
     }
   };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'AUTH_SUCCESS') {
+        onLogin(event.data.user);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onLogin]);
 
   return (
     <div className="fixed inset-0 z-[100] bg-void/90 backdrop-blur-md flex items-center justify-center p-6 overflow-y-auto">
