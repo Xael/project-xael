@@ -34,18 +34,27 @@ async function startServer() {
   // --- AUTH ROUTES ---
   
   app.get("/api/auth/google/url", (req, res) => {
-    const redirectUri = `${process.env.APP_URL || 'http://localhost:3000'}/auth/callback`;
-    const url = googleClient.generateAuthUrl({
-      access_type: "offline",
-      scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
-      redirect_uri: redirectUri,
-    });
-    res.json({ url });
+    try {
+      if (!process.env.GOOGLE_CLIENT_ID) {
+        throw new Error("GOOGLE_CLIENT_ID is not defined in environment variables.");
+      }
+      const redirectUri = `${process.env.APP_URL || 'http://localhost:3000'}/auth/callback`;
+      const url = googleClient.generateAuthUrl({
+        access_type: "offline",
+        scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
+        redirect_uri: redirectUri,
+      });
+      res.json({ url });
+    } catch (error: any) {
+      console.error("Error generating Google Auth URL:", error.message);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.get("/auth/callback", async (req, res) => {
     const { code } = req.query;
     try {
+      if (!code) throw new Error("No code provided.");
       const redirectUri = `${process.env.APP_URL || 'http://localhost:3000'}/auth/callback`;
       const { tokens } = await googleClient.getToken({
         code: code as string,
@@ -76,8 +85,8 @@ async function startServer() {
       
       res.cookie("auth_token", token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax", // Changed for better local/env compatibility
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
@@ -95,20 +104,22 @@ async function startServer() {
           </body>
         </html>
       `);
-    } catch (error) {
-      console.error("Auth error:", error);
-      res.status(500).send("Authentication failed");
+    } catch (error: any) {
+      console.error("Auth callback error:", error.message);
+      res.status(500).send(`Authentication failed: ${error.message}`);
     }
   });
 
   app.get("/api/auth/me", async (req, res) => {
-    const token = req.cookies.auth_token;
-    if (!token) return res.status(401).json({ error: "Unauthorized" });
     try {
+      const token = req.cookies.auth_token;
+      if (!token) return res.status(401).json({ error: "Unauthorized" });
+      
       const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
       const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
       res.json(user);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("API Auth Me error:", error.message);
       res.status(401).json({ error: "Unauthorized" });
     }
   });

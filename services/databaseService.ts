@@ -5,9 +5,22 @@ import io from 'socket.io-client';
 const socket = io(window.location.origin);
 
 export const getOrCreateUserProfile = async (): Promise<UserProfile | null> => {
-  const res = await fetch('/api/auth/me');
-  if (res.ok) return res.json();
-  return null;
+  try {
+    const res = await fetch('/api/auth/me');
+    if (res.status === 401) return null;
+    
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.indexOf("application/json") !== -1) {
+      return await res.json();
+    } else {
+      const text = await res.text();
+      console.error("Expected JSON but got:", text.substring(0, 100));
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return null;
+  }
 };
 
 export const logout = async () => {

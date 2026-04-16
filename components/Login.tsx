@@ -14,10 +14,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     
     try {
       const res = await fetch('/api/auth/google/url');
-      const { url } = await res.json();
+      const data = await res.json();
       
+      if (data.error) {
+        alert(`Erro de Configuração: ${data.error}`);
+        return;
+      }
+
       const authWindow = window.open(
-        url,
+        data.url,
         'google_login_popup',
         'width=600,height=700'
       );
