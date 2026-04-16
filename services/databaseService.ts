@@ -3,11 +3,19 @@ import { UserProfile, HistoryItem, ProjectItem, AppSettings } from '../types';
 import io from 'socket.io-client';
 
 const socket = io(import.meta.env.VITE_API_URL || window.location.origin);
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const VITE_API_URL = import.meta.env.VITE_API_URL || '';
+// Ensure we don't end up with // if the user provides a path ending in /
+const API_BASE = VITE_API_URL.endsWith('/') ? VITE_API_URL.slice(0, -1) : VITE_API_URL;
 
 export const getOrCreateUserProfile = async (): Promise<UserProfile | null> => {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/me`);
+    const url = `${API_BASE}/api/auth/me`.replace(/\/+/g, '/'); // Safety replace for double slashes
+    // If it started with https:/, the replace above broke it, let's be careful
+    const finalUrl = API_BASE.startsWith('http') 
+      ? `${API_BASE.replace(/\/$/, '')}/api/auth/me`
+      : `/api/auth/me`;
+
+    const res = await fetch(finalUrl);
     if (res.status === 401) return null;
     
     const contentType = res.headers.get("content-type");
